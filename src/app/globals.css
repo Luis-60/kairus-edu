@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
+/* Tokens extraídos do protótipo (Permanência Estudantil). */
+@theme {
+  --font-sans: var(--font-manrope), system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-navy: #0b1b3f;
+  --color-primary: #1d4ed8;
+  --color-primary-hover: #173ea8;
+  --color-accent: #2f6bff;
+  --color-canvas: #f5f8fd;
+  --color-surface: #ffffff;
+  --color-line: #dbe1ea;
+  --color-line-strong: #7f8ca3;
+  --color-muted: #586277;
+  --color-body: #33425f;
+  --color-tint: #e7effb;
+  --color-tint-strong: #a9c4f5;
+  --color-sidebar-text: #b4c2dc;
+
+  --color-ok: #1b6e43;
+  --color-ok-bg: #e0f3e8;
+  --color-warn: #8a5a00;
+  --color-warn-fill: #d9a21b;
+  --color-warn-bg: #fcefcf;
+  --color-danger: #a82019;
+  --color-danger-bg: #fbe3e0;
+
+  --radius-card: 12px;
+  --radius-control: 8px;
+
+  --shadow-card: 0 1px 2px rgba(11, 27, 63, 0.05), 0 4px 16px rgba(11, 27, 63, 0.05);
+  --shadow-raised: 0 12px 40px rgba(11, 27, 63, 0.14);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-navy);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@utility label-caps {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
 }
