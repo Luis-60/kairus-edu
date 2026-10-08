@@ -37,6 +37,46 @@ isOneToOne: false
       referencedColumns: ["id","instituicao_id"]
     }
                   ]
+                },"area_passos": {
+                  Row: {
+                    "area_id": string,"descricao": string,"id": string,"instituicao_id": string,"ordem": number,"titulo": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "area_id": string,"descricao": string,"id"?: string,"instituicao_id": string,"ordem": number,"titulo": string
+                  }
+                  Update: {
+                    "area_id"?: string,"descricao"?: string,"id"?: string,"instituicao_id"?: string,"ordem"?: number,"titulo"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "area_passos_area_id_instituicao_id_fkey"
+      columns: ["area_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "areas_atuacao"
+      referencedColumns: ["id","instituicao_id"]
+    }
+                  ]
+                },"areas_atuacao": {
+                  Row: {
+                    "curso_id": string,"descricao": string,"id": string,"instituicao_id": string,"nome": string,"ordem": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "curso_id": string,"descricao": string,"id"?: string,"instituicao_id": string,"nome": string,"ordem"?: number
+                  }
+                  Update: {
+                    "curso_id"?: string,"descricao"?: string,"id"?: string,"instituicao_id"?: string,"nome"?: string,"ordem"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "areas_atuacao_curso_id_instituicao_id_fkey"
+      columns: ["curso_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "cursos"
+      referencedColumns: ["id","instituicao_id"]
+    }
+                  ]
                 },"audit_log": {
                   Row: {
                     "acao": string,"ator_id": string | null,"detalhes": NonNullable<Json>,"entidade": string,"entidade_id": string | null,"id": number,"instituicao_id": string,"ocorrido_em": string
@@ -83,6 +123,52 @@ isOneToOne: false
       referencedColumns: ["id","instituicao_id"]
     }
                   ]
+                },"candidaturas": {
+                  Row: {
+                    "created_at": string,"estudante_id": string,"id": string,"instituicao_id": string,"status": Database["public"]['Enums']["status_candidatura"],"updated_at": string,"vaga_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"estudante_id": string,"id"?: string,"instituicao_id": string,"status"?: Database["public"]['Enums']["status_candidatura"],"updated_at"?: string,"vaga_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"estudante_id"?: string,"id"?: string,"instituicao_id"?: string,"status"?: Database["public"]['Enums']["status_candidatura"],"updated_at"?: string,"vaga_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "candidaturas_estudante_id_instituicao_id_fkey"
+      columns: ["estudante_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "estudantes"
+      referencedColumns: ["id","instituicao_id"]
+    },{
+      foreignKeyName: "candidaturas_vaga_id_instituicao_id_fkey"
+      columns: ["vaga_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "vagas"
+      referencedColumns: ["id","instituicao_id"]
+    }
+                  ]
+                },"competencias": {
+                  Row: {
+                    "created_at": string,"id": string,"instituicao_id": string,"nome": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"instituicao_id": string,"nome": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"instituicao_id"?: string,"nome"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "competencias_instituicao_id_fkey"
+      columns: ["instituicao_id"]
+isOneToOne: false
+      referencedRelation: "instituicoes"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"coordenacoes_curso": {
                   Row: {
                     "created_at": string,"curso_id": string,"instituicao_id": string,"perfil_id": string
@@ -109,6 +195,26 @@ isOneToOne: false
       referencedColumns: ["id","instituicao_id"]
     }
                   ]
+                },"curriculos": {
+                  Row: {
+                    "competencias_texto": string | null,"competencias_vivencias": NonNullable<Json>,"created_at": string,"curriculo_gerado_em": string | null,"estudante_id": string,"experiencia_texto": string | null,"id": string,"instituicao_id": string,"resumo": string | null,"updated_at": string,"vivencias": string | null,"vivencias_geradas_em": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "competencias_texto"?: string | null,"competencias_vivencias"?: NonNullable<Json>,"created_at"?: string,"curriculo_gerado_em"?: string | null,"estudante_id": string,"experiencia_texto"?: string | null,"id"?: string,"instituicao_id": string,"resumo"?: string | null,"updated_at"?: string,"vivencias"?: string | null,"vivencias_geradas_em"?: string | null
+                  }
+                  Update: {
+                    "competencias_texto"?: string | null,"competencias_vivencias"?: NonNullable<Json>,"created_at"?: string,"curriculo_gerado_em"?: string | null,"estudante_id"?: string,"experiencia_texto"?: string | null,"id"?: string,"instituicao_id"?: string,"resumo"?: string | null,"updated_at"?: string,"vivencias"?: string | null,"vivencias_geradas_em"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "curriculos_estudante_id_instituicao_id_fkey"
+      columns: ["estudante_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "estudantes"
+      referencedColumns: ["id","instituicao_id"]
+    }
+                  ]
                 },"cursos": {
                   Row: {
                     "created_at": string,"id": string,"instituicao_id": string,"modalidade": Database["public"]['Enums']["modalidade_curso"],"nome": string,"total_periodos": number,"updated_at": string
@@ -127,6 +233,52 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "instituicoes"
       referencedColumns: ["id"]
+    }
+                  ]
+                },"empresas": {
+                  Row: {
+                    "areas": string,"cidade": string,"created_at": string,"distancia_campus_km": number | null,"id": string,"instituicao_id": string,"nome": string,"setor": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "areas": string,"cidade": string,"created_at"?: string,"distancia_campus_km"?: number | null,"id"?: string,"instituicao_id": string,"nome": string,"setor": string
+                  }
+                  Update: {
+                    "areas"?: string,"cidade"?: string,"created_at"?: string,"distancia_campus_km"?: number | null,"id"?: string,"instituicao_id"?: string,"nome"?: string,"setor"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "empresas_instituicao_id_fkey"
+      columns: ["instituicao_id"]
+isOneToOne: false
+      referencedRelation: "instituicoes"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"estudante_competencias": {
+                  Row: {
+                    "competencia_id": string,"created_at": string,"estudante_id": string,"instituicao_id": string,"nivel": Database["public"]['Enums']["nivel_competencia"],"origem": string | null,"progresso": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "competencia_id": string,"created_at"?: string,"estudante_id": string,"instituicao_id": string,"nivel": Database["public"]['Enums']["nivel_competencia"],"origem"?: string | null,"progresso"?: number
+                  }
+                  Update: {
+                    "competencia_id"?: string,"created_at"?: string,"estudante_id"?: string,"instituicao_id"?: string,"nivel"?: Database["public"]['Enums']["nivel_competencia"],"origem"?: string | null,"progresso"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "estudante_competencias_competencia_id_instituicao_id_fkey"
+      columns: ["competencia_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "competencias"
+      referencedColumns: ["id","instituicao_id"]
+    },{
+      foreignKeyName: "estudante_competencias_estudante_id_instituicao_id_fkey"
+      columns: ["estudante_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "estudantes"
+      referencedColumns: ["id","instituicao_id"]
     }
                   ]
                 },"estudantes": {
@@ -161,6 +313,32 @@ isOneToOne: false
       referencedColumns: ["id","instituicao_id"]
     }
                   ]
+                },"ia_uso": {
+                  Row: {
+                    "criado_em": string,"custo_usd": number | null,"funcao": string,"id": number,"instituicao_id": string,"modelo": string,"perfil_id": string,"sucesso": boolean,"tokens_entrada": number | null,"tokens_saida": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "criado_em"?: string,"custo_usd"?: number | null,"funcao": string,"id"?: never,"instituicao_id": string,"modelo": string,"perfil_id": string,"sucesso": boolean,"tokens_entrada"?: number | null,"tokens_saida"?: number | null
+                  }
+                  Update: {
+                    "criado_em"?: string,"custo_usd"?: number | null,"funcao"?: string,"id"?: never,"instituicao_id"?: string,"modelo"?: string,"perfil_id"?: string,"sucesso"?: boolean,"tokens_entrada"?: number | null,"tokens_saida"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "ia_uso_instituicao_id_fkey"
+      columns: ["instituicao_id"]
+isOneToOne: false
+      referencedRelation: "instituicoes"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "ia_uso_perfil_id_fkey"
+      columns: ["perfil_id"]
+isOneToOne: false
+      referencedRelation: "perfis"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"indicadores_academicos": {
                   Row: {
                     "coeficiente": number | null,"created_at": string,"creditos_concluidos_pct": number | null,"disciplinas": number | null,"entregas_atrasadas": number | null,"estudante_id": string,"frequencia": number | null,"id": string,"instituicao_id": string,"periodo_letivo_id": string,"updated_at": string
@@ -189,14 +367,14 @@ isOneToOne: false
                   ]
                 },"insights": {
                   Row: {
-                    "acao_sugerida": string | null,"categoria": string,"contexto": string,"created_at": string,"id": string,"instituicao_id": string,"ordem": number,"texto": string
+                    "acao_sugerida": string | null,"categoria": string,"contexto": string,"created_at": string,"gerado_em": string | null,"id": string,"instituicao_id": string,"ordem": number,"origem": string,"texto": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "acao_sugerida"?: string | null,"categoria": string,"contexto": string,"created_at"?: string,"id"?: string,"instituicao_id": string,"ordem"?: number,"texto": string
+                    "acao_sugerida"?: string | null,"categoria": string,"contexto": string,"created_at"?: string,"gerado_em"?: string | null,"id"?: string,"instituicao_id": string,"ordem"?: number,"origem"?: string,"texto": string
                   }
                   Update: {
-                    "acao_sugerida"?: string | null,"categoria"?: string,"contexto"?: string,"created_at"?: string,"id"?: string,"instituicao_id"?: string,"ordem"?: number,"texto"?: string
+                    "acao_sugerida"?: string | null,"categoria"?: string,"contexto"?: string,"created_at"?: string,"gerado_em"?: string | null,"id"?: string,"instituicao_id"?: string,"ordem"?: number,"origem"?: string,"texto"?: string
                   }
                   Relationships: [
                     {
@@ -220,6 +398,26 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"metricas_modelo": {
+                  Row: {
+                    "auc": number,"base_simulada": boolean,"captura_top20": number | null,"created_at": string,"id": string,"instituicao_id": string,"modelo_versao": string,"momento": string,"periodo_teste": string,"periodo_treino": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auc": number,"base_simulada"?: boolean,"captura_top20"?: number | null,"created_at"?: string,"id"?: string,"instituicao_id": string,"modelo_versao": string,"momento": string,"periodo_teste": string,"periodo_treino": string
+                  }
+                  Update: {
+                    "auc"?: number,"base_simulada"?: boolean,"captura_top20"?: number | null,"created_at"?: string,"id"?: string,"instituicao_id"?: string,"modelo_versao"?: string,"momento"?: string,"periodo_teste"?: string,"periodo_treino"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "metricas_modelo_instituicao_id_fkey"
+      columns: ["instituicao_id"]
+isOneToOne: false
+      referencedRelation: "instituicoes"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"pedidos_desligamento": {
                   Row: {
@@ -321,6 +519,78 @@ isOneToOne: false
       referencedColumns: ["id","instituicao_id"]
     }
                   ]
+                },"trilha_carreira_etapas": {
+                  Row: {
+                    "curso_id": string,"descricao": string,"entrega": string,"id": string,"instituicao_id": string,"periodo": number,"titulo": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "curso_id": string,"descricao": string,"entrega": string,"id"?: string,"instituicao_id": string,"periodo": number,"titulo": string
+                  }
+                  Update: {
+                    "curso_id"?: string,"descricao"?: string,"entrega"?: string,"id"?: string,"instituicao_id"?: string,"periodo"?: number,"titulo"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "trilha_carreira_etapas_curso_id_instituicao_id_fkey"
+      columns: ["curso_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "cursos"
+      referencedColumns: ["id","instituicao_id"]
+    }
+                  ]
+                },"vaga_competencias": {
+                  Row: {
+                    "competencia_id": string,"instituicao_id": string,"vaga_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "competencia_id": string,"instituicao_id": string,"vaga_id": string
+                  }
+                  Update: {
+                    "competencia_id"?: string,"instituicao_id"?: string,"vaga_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "vaga_competencias_competencia_id_instituicao_id_fkey"
+      columns: ["competencia_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "competencias"
+      referencedColumns: ["id","instituicao_id"]
+    },{
+      foreignKeyName: "vaga_competencias_vaga_id_instituicao_id_fkey"
+      columns: ["vaga_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "vagas"
+      referencedColumns: ["id","instituicao_id"]
+    }
+                  ]
+                },"vagas": {
+                  Row: {
+                    "ativa": boolean,"carga_horaria": string,"cidade": string,"created_at": string,"curso_id": string,"descricao": string,"empresa_id": string,"id": string,"instituicao_id": string,"periodo_minimo": number,"titulo": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "ativa"?: boolean,"carga_horaria": string,"cidade": string,"created_at"?: string,"curso_id": string,"descricao": string,"empresa_id": string,"id"?: string,"instituicao_id": string,"periodo_minimo"?: number,"titulo": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "ativa"?: boolean,"carga_horaria"?: string,"cidade"?: string,"created_at"?: string,"curso_id"?: string,"descricao"?: string,"empresa_id"?: string,"id"?: string,"instituicao_id"?: string,"periodo_minimo"?: number,"titulo"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "vagas_curso_id_instituicao_id_fkey"
+      columns: ["curso_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "cursos"
+      referencedColumns: ["id","instituicao_id"]
+    },{
+      foreignKeyName: "vagas_empresa_id_instituicao_id_fkey"
+      columns: ["empresa_id","instituicao_id"]
+isOneToOne: false
+      referencedRelation: "empresas"
+      referencedColumns: ["id","instituicao_id"]
+    }
+                  ]
                 },"vinculos_periodo": {
                   Row: {
                     "created_at": string,"estudante_id": string,"id": string,"instituicao_id": string,"periodo_curso": number,"periodo_letivo_id": string,"situacao_final": Database["public"]['Enums']["situacao_estudante"] | null,"updated_at": string
@@ -395,6 +665,9 @@ isOneToOne: false
               "alto": number,"alto_com_acao": number,"atencao": number,"total": number
             }[]
                            },
+"ia_usos_hoje":
+{ Args: { "p_funcao": string }; Returns: number
+                           },
 "painel_evasao_por":
 { Args: { "p_recorte": string }; Returns: {
               "evadidos": number,"ordem": number,"rotulo": string,"taxa": number,"total": number
@@ -403,6 +676,11 @@ isOneToOne: false
 "painel_evasao_semestres":
 { Args: Record<PropertyKey, never>; Returns: {
               "codigo": string,"evadidos": number,"taxa": number,"total": number
+            }[]
+                           },
+"painel_fatores":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "alunos": number,"fator": string,"peso_medio": number
             }[]
                            },
 "painel_kpis":
@@ -422,7 +700,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "assunto_apoio": "frequencia"|"financeiro"|"grade"|"trancamento"|"outro","faixa_risco": "baixo"|"atencao"|"alto","modalidade_curso": "presencial"|"ead","motivo_desligamento": "acesso_internet_equipamento"|"financeira"|"trabalho_estudo"|"deslocamento"|"dificuldade_conteudo"|"adaptacao_curso"|"outro","papel_usuario": "gestor"|"coordenador"|"estudante","situacao_estudante": "ativo"|"trancado"|"cancelado"|"evadido"|"formado","status_acao": "pendente"|"em_andamento"|"concluida"|"cancelada","status_pedido": "aberto"|"concluido"|"revertido","status_solicitacao": "aberta"|"em_atendimento"|"encerrada","tipo_acao": "conversa_individual"|"tutoria"|"apoio_financeiro"|"monitoria"|"ajuste_grade"|"outro","tipo_desligamento": "trancamento"|"cancelamento"
+            "assunto_apoio": "frequencia"|"financeiro"|"grade"|"trancamento"|"outro","faixa_risco": "baixo"|"atencao"|"alto","modalidade_curso": "presencial"|"ead","motivo_desligamento": "acesso_internet_equipamento"|"financeira"|"trabalho_estudo"|"deslocamento"|"dificuldade_conteudo"|"adaptacao_curso"|"outro","nivel_competencia": "tem"|"desenvolvendo","papel_usuario": "gestor"|"coordenador"|"estudante","situacao_estudante": "ativo"|"trancado"|"cancelado"|"evadido"|"formado","status_acao": "pendente"|"em_andamento"|"concluida"|"cancelada","status_candidatura": "enviada"|"em_analise"|"encerrada","status_pedido": "aberto"|"concluido"|"revertido","status_solicitacao": "aberta"|"em_atendimento"|"encerrada","tipo_acao": "conversa_individual"|"tutoria"|"apoio_financeiro"|"monitoria"|"ajuste_grade"|"outro","tipo_desligamento": "trancamento"|"cancelamento"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -538,7 +816,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "assunto_apoio": ["frequencia", "financeiro", "grade", "trancamento", "outro"],"faixa_risco": ["baixo", "atencao", "alto"],"modalidade_curso": ["presencial", "ead"],"motivo_desligamento": ["acesso_internet_equipamento", "financeira", "trabalho_estudo", "deslocamento", "dificuldade_conteudo", "adaptacao_curso", "outro"],"papel_usuario": ["gestor", "coordenador", "estudante"],"situacao_estudante": ["ativo", "trancado", "cancelado", "evadido", "formado"],"status_acao": ["pendente", "em_andamento", "concluida", "cancelada"],"status_pedido": ["aberto", "concluido", "revertido"],"status_solicitacao": ["aberta", "em_atendimento", "encerrada"],"tipo_acao": ["conversa_individual", "tutoria", "apoio_financeiro", "monitoria", "ajuste_grade", "outro"],"tipo_desligamento": ["trancamento", "cancelamento"]
+            "assunto_apoio": ["frequencia", "financeiro", "grade", "trancamento", "outro"],"faixa_risco": ["baixo", "atencao", "alto"],"modalidade_curso": ["presencial", "ead"],"motivo_desligamento": ["acesso_internet_equipamento", "financeira", "trabalho_estudo", "deslocamento", "dificuldade_conteudo", "adaptacao_curso", "outro"],"nivel_competencia": ["tem", "desenvolvendo"],"papel_usuario": ["gestor", "coordenador", "estudante"],"situacao_estudante": ["ativo", "trancado", "cancelado", "evadido", "formado"],"status_acao": ["pendente", "em_andamento", "concluida", "cancelada"],"status_candidatura": ["enviada", "em_analise", "encerrada"],"status_pedido": ["aberto", "concluido", "revertido"],"status_solicitacao": ["aberta", "em_atendimento", "encerrada"],"tipo_acao": ["conversa_individual", "tutoria", "apoio_financeiro", "monitoria", "ajuste_grade", "outro"],"tipo_desligamento": ["trancamento", "cancelamento"]
           }
         }
 } as const

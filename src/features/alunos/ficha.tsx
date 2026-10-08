@@ -1,6 +1,7 @@
 import { Badge, FAIXA, RiskBadge, type Tone } from "@/components/ui/badge";
 import { EmptyState, Meter } from "@/components/ui/states";
 import { AcaoForm } from "@/features/acoes/acao-form";
+import { ConcluirCheckbox } from "@/features/acoes/concluir-checkbox";
 import type { NovaAcaoInput } from "@/features/acoes/schemas";
 import { dataCurta, dec1, pct1, probabilidade } from "@/lib/format";
 import { ASSUNTO_APOIO, STATUS_ACAO, TIPO_ACAO } from "@/lib/labels";
@@ -124,6 +125,14 @@ export function Ficha({ ficha, equipe, usuarioId }: Props) {
                 <p className="text-[13px] leading-5 text-muted">
                   Responsável, {a.responsavel_nome ?? "—"}. Prazo, {dataCurta(a.prazo)}.
                 </p>
+                {a.status !== "cancelada" && (
+                  <ConcluirCheckbox
+                    key={`${a.id}-${a.status}`}
+                    acaoId={a.id ?? ""}
+                    concluida={a.status === "concluida"}
+                    rotulo={`Marcar como concluída: ${a.tipo ? TIPO_ACAO[a.tipo] : "ação"}`}
+                  />
+                )}
               </li>
             ))}
           </ul>

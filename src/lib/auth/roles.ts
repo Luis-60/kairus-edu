@@ -24,6 +24,7 @@ export type NavItem = { href: string; label: string };
 export const NAVEGACAO: Record<Papel, NavItem[]> = {
   gestor: [
     { href: "/gestao", label: "Visão geral" },
+    { href: "/inteligencia", label: "Inteligência" },
     { href: "/alunos", label: "Alunos" },
     { href: "/acoes", label: "Ações de permanência" },
     { href: "/desligamentos", label: "Pesquisas de desligamento" },
@@ -33,5 +34,8 @@ export const NAVEGACAO: Record<Papel, NavItem[]> = {
     { href: "/acoes", label: "Ações de permanência" },
     { href: "/desligamentos", label: "Pesquisa de desligamento" },
   ],
-  estudante: [{ href: "/minha-jornada", label: "Minha jornada" }],
+  estudante: [
+    { href: "/minha-jornada", label: "Minha jornada" },
+    { href: "/carreira", label: "Carreira e estágio" },
+  ],
 };

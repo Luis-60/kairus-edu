@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { KpiCard, PageHeader, Panel } from "@/components/ui/panel";
 import { EmptyState, ErrorState } from "@/components/ui/states";
+import { ButtonLink } from "@/components/ui/button";
+import { Meter } from "@/components/ui/states";
 import { ApoioDialog } from "@/features/apoio/apoio-dialog";
+import { gerarCurriculo } from "@/features/ia/actions";
+import { GerarButton } from "@/features/ia/gerar-button";
 import { carregarJornada } from "@/features/estudante/queries";
 import { requirePapel } from "@/lib/auth/session";
 import { cn } from "@/lib/cn";
@@ -117,6 +121,91 @@ export default async function MinhaJornadaPage() {
             <ApoioDialog assuntoSugerido={apoio.assunto} podeAbrir={!j.solicitacaoAberta} />
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+        <Panel
+          id="competencias"
+          title="Minhas competências"
+          description="Reconhecidas a partir das disciplinas e atividades que você já concluiu"
+        >
+          {j.competencias.length === 0 ? (
+            <EmptyState title="Nenhuma competência reconhecida ainda.">
+              Elas aparecem conforme você conclui disciplinas e atividades.
+            </EmptyState>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {j.competencias.map((c) => (
+                <li key={c.nome} className="flex flex-col gap-1.5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="font-semibold">{c.nome}</span>
+                    <span className="text-[13px] leading-5 text-muted">
+                      {c.nivel === "desenvolvendo" ? "Em desenvolvimento · " : ""}
+                      {c.origem}
+                    </span>
+                  </div>
+                  <Meter value={c.progresso} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+
+        <Panel
+          id="curriculo"
+          title="Currículo profissional com IA"
+          description="A IA transforma sua formação e suas competências em um currículo pronto para estágio e emprego."
+        >
+          {!j.curriculo?.resumo ? (
+            <div className="flex flex-col items-start gap-3 rounded-card border border-dashed border-line bg-canvas p-5">
+              <span className="text-body">Seu currículo ainda não foi gerado.</span>
+              <GerarButton acao={gerarCurriculo} rotulo="Gerar currículo com IA" rotuloPendente="Montando seu currículo…" />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 rounded-card border border-line p-5">
+                <div>
+                  <div className="text-lg leading-7 font-bold">{sessao.nome}</div>
+                  <div className="text-[13px] leading-5 text-muted">
+                    Estudante de {j.curso}, {j.periodoAtual}º período
+                  </div>
+                </div>
+                <div>
+                  <div className="label-caps mb-1 text-muted">Resumo</div>
+                  <p className="text-body">{j.curriculo.resumo}</p>
+                </div>
+                {j.curriculo.competencias_texto && (
+                  <div>
+                    <div className="label-caps mb-1 text-muted">Competências</div>
+                    <p className="text-body">{j.curriculo.competencias_texto}</p>
+                  </div>
+                )}
+                {j.curriculo.experiencia_texto && (
+                  <div>
+                    <div className="label-caps mb-1 text-muted">Experiência</div>
+                    <p className="text-body">{j.curriculo.experiencia_texto}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap items-start gap-3">
+                <ButtonLink href="/minha-jornada/curriculo" variant="secondary">
+                  Baixar em PDF
+                </ButtonLink>
+                <GerarButton
+                  acao={gerarCurriculo}
+                  rotulo="Gerar novamente"
+                  rotuloPendente="Montando seu currículo…"
+                  variante="secondary"
+                />
+              </div>
+              <p className="text-[13px] leading-5 text-muted">
+                Texto gerado por IA
+                {j.curriculo.curriculo_gerado_em ? ` em ${dataCurta(j.curriculo.curriculo_gerado_em)}` : ""}. Revise antes
+                de enviar.
+              </p>
+            </div>
+          )}
+        </Panel>
       </div>
     </>
   );

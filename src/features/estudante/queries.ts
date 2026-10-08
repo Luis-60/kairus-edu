@@ -18,7 +18,7 @@ export async function carregarJornada(userId: string) {
   if (error) return resultado("jornada", null, error);
   if (!estudante) return { ok: true as const, data: null };
 
-  const [indicadores, solicitacao] = await Promise.all([
+  const [indicadores, solicitacao, competencias, curriculo] = await Promise.all([
     supabase
       .from("indicadores_academicos")
       .select("frequencia, coeficiente, disciplinas, entregas_atrasadas, creditos_concluidos_pct, periodos_letivos!inner(codigo, encerrado)")
@@ -33,6 +33,16 @@ export async function carregarJornada(userId: string) {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("estudante_competencias")
+      .select("nivel, progresso, origem, competencias(nome)")
+      .eq("estudante_id", estudante.id)
+      .order("progresso", { ascending: false }),
+    supabase
+      .from("curriculos")
+      .select("resumo, competencias_texto, experiencia_texto, curriculo_gerado_em")
+      .eq("estudante_id", estudante.id)
+      .maybeSingle(),
   ]);
 
   return {
@@ -45,6 +55,10 @@ export async function carregarJornada(userId: string) {
       frequenciaMinima: Number(estudante.instituicoes?.frequencia_minima ?? 75),
       indicadores: indicadores.data,
       solicitacaoAberta: solicitacao.data,
+      competencias: (competencias.data ?? []).flatMap((c) =>
+        c.competencias ? [{ nome: c.competencias.nome, nivel: c.nivel, progresso: c.progresso, origem: c.origem }] : [],
+      ),
+      curriculo: curriculo.data,
     },
   };
 }

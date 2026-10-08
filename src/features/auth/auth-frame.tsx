@@ -11,7 +11,7 @@ export function AuthFrame({ children }: { children: ReactNode }) {
           ← Voltar ao site
         </Link>
         <div>
-          <Logo className="mb-8" />
+          <Logo className="mb-8 h-8" priority />
           <p className="max-w-120 text-[28px] leading-[34px] font-bold tracking-[-0.02em] md:text-4xl md:leading-11">
             Cada sinal é uma chance de agir antes da saída.
           </p>

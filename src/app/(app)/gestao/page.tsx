@@ -219,8 +219,8 @@ function DistribuicaoRisco({ faixas }: { faixas: { faixa: keyof typeof FAIXA; to
           </li>
         ))}
       </ul>
-      <ButtonLink href="/alunos?faixa=alto" variant="ghost" className="justify-start px-0">
-        Ver alunos em alto risco →
+      <ButtonLink href="/inteligencia" variant="ghost" className="justify-start px-0">
+        Abrir Inteligência de Permanência →
       </ButtonLink>
     </div>
   );

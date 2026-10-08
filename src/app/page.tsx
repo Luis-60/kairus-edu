@@ -48,12 +48,7 @@ export default function LandingPage() {
   return (
     <div className="bg-surface">
       <header className="mx-auto flex max-w-316 flex-wrap items-center justify-between gap-4 px-6 py-6 md:px-8">
-        <span className="flex items-center gap-3">
-          <span aria-hidden className="flex size-7 items-center justify-center rounded-control bg-navy">
-            <span className="size-2 rounded-full bg-accent" />
-          </span>
-          <span className="text-lg font-extrabold">KairusEdu</span>
-        </span>
+        <Logo fundo="claro" className="h-7" priority />
         <nav aria-label="Seções" className="hidden gap-8 font-semibold md:flex">
           <a href="#problema" className="hover:text-primary">O problema</a>
           <a href="#como" className="hover:text-primary">Como funciona</a>
@@ -170,7 +165,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="mx-auto flex max-w-316 flex-wrap items-center justify-between gap-4 px-6 py-8 text-[13px] leading-5 text-muted md:px-8">
-        <Logo className="text-navy [&>span:first-child]:bg-navy" />
+        <Logo fundo="claro" />
         <span>Acesso restrito a instituições parceiras.</span>
         <Link href="/login" className="font-semibold text-primary hover:text-primary-hover">
           Entrar

@@ -9,6 +9,7 @@ export type Sessao = {
   userId: string;
   nome: string;
   papel: Papel;
+  instituicaoId: string;
   instituicaoNome: string;
 };
 
@@ -21,7 +22,7 @@ export const getSessao = cache(async (): Promise<Sessao | null> => {
 
   const { data: perfil } = await supabase
     .from("perfis")
-    .select("nome, papel, ativo, instituicoes(nome)")
+    .select("nome, papel, ativo, instituicao_id, instituicoes(nome)")
     .eq("id", userId)
     .maybeSingle();
 
@@ -31,6 +32,7 @@ export const getSessao = cache(async (): Promise<Sessao | null> => {
     userId,
     nome: perfil.nome,
     papel: perfil.papel,
+    instituicaoId: perfil.instituicao_id,
     instituicaoNome: perfil.instituicoes?.nome ?? "",
   };
 });

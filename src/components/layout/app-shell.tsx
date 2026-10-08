@@ -80,17 +80,17 @@ export function AppShell({ nav, nome, papelLabel, instituicao, children }: Shell
       {/* Desktop: sidebar fixa, como no protótipo. */}
       <nav
         aria-label="Navegação principal"
-        className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between bg-navy px-4 py-6 text-white lg:flex"
+        className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col justify-between bg-navy px-4 py-6 text-white lg:flex print:hidden"
       >
         <div className="flex flex-col gap-5">
-          <Logo className="px-3" />
+          <Logo className="mx-3 my-1.5" priority />
           <NavLinks nav={nav} />
         </div>
         <Conta nome={nome} papelLabel={papelLabel} instituicao={instituicao} />
       </nav>
 
       {/* Tablet e mobile: barra superior com menu em drawer. */}
-      <header className="sticky top-0 z-30 flex items-center justify-between bg-navy px-4 py-3 text-white lg:hidden">
+      <header className="sticky top-0 z-30 flex items-center justify-between bg-navy px-4 py-3 text-white lg:hidden print:hidden">
         <Logo />
         <button
           type="button"
@@ -115,7 +115,7 @@ export function AppShell({ nav, nome, papelLabel, instituicao, children }: Shell
         </div>
       </Sheet>
 
-      <main id="conteudo" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <main id="conteudo" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 print:p-0">
         <div className="mx-auto flex max-w-7xl flex-col gap-6">{children}</div>
       </main>
     </div>

@@ -1,13 +1,23 @@
+import Image from "next/image";
 import { cn } from "@/lib/cn";
+import wordmark from "../../../public/brand/wordmark.png";
+import wordmarkBranco from "../../../public/brand/wordmark-branco.png";
 
-/** Marca do protótipo: quadrado branco com ponto azul. */
-export function Logo({ className, label = "KairusEdu" }: { className?: string; label?: string }) {
+type LogoProps = {
+  /** Fundo sobre o qual a marca aparece: "escuro" usa a versão branca (sidebar, painel do login). */
+  fundo?: "claro" | "escuro";
+  className?: string;
+  priority?: boolean;
+};
+
+/** Marca kairus.edu (wordmark). A altura é definida por className; a largura acompanha a proporção. */
+export function Logo({ fundo = "escuro", className, priority }: LogoProps) {
   return (
-    <span className={cn("flex items-center gap-3", className)}>
-      <span aria-hidden className="flex size-7 items-center justify-center rounded-control bg-white">
-        <span className="size-2 rounded-full bg-accent" />
-      </span>
-      <span className="text-lg font-extrabold">{label}</span>
-    </span>
+    <Image
+      src={fundo === "escuro" ? wordmarkBranco : wordmark}
+      alt="KairusEdu"
+      priority={priority}
+      className={cn("h-6 w-auto", className)}
+    />
   );
 }

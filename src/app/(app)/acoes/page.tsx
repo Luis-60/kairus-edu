@@ -16,6 +16,7 @@ import {
   POR_PAGINA_ACOES,
   type FiltrosAcoes,
 } from "@/features/acoes/queries";
+import { ConcluirCheckbox } from "@/features/acoes/concluir-checkbox";
 import { StatusSelect } from "@/features/acoes/status-select";
 import { atualizarSolicitacao } from "@/features/apoio/actions";
 import { requirePapel } from "@/lib/auth/session";
@@ -127,7 +128,17 @@ async function ListaAcoes({ f, usuarioId }: { f: FiltrosAcoes; usuarioId: string
             {lista.data.map((a) => {
               const atrasada = a.prazo && a.prazo < hoje && (a.status === "pendente" || a.status === "em_andamento");
               return (
-                <li key={a.id} className="grid grid-cols-1 gap-3 py-4 md:grid-cols-[110px_minmax(0,1fr)_170px_150px] md:items-center">
+                <li
+                  key={a.id}
+                  className="grid grid-cols-1 gap-3 py-4 md:grid-cols-[44px_110px_minmax(0,1fr)_170px_150px] md:items-center"
+                >
+                  <ConcluirCheckbox
+                    key={`concluir-${a.id}-${a.status}`}
+                    acaoId={a.id ?? ""}
+                    concluida={a.status === "concluida"}
+                    desabilitada={a.status === "cancelada"}
+                    rotulo={`Marcar como concluída a ação do aluno ${a.codigo}`}
+                  />
                   <div>
                     <Link
                       href={`/alunos?aluno=${a.codigo}`}
@@ -138,7 +149,9 @@ async function ListaAcoes({ f, usuarioId }: { f: FiltrosAcoes; usuarioId: string
                     <div className="truncate text-xs leading-4 text-muted">{a.curso_nome}</div>
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold">{a.tipo ? TIPO_ACAO[a.tipo] : "Ação"}</div>
+                    <div className={cn("font-semibold", a.status === "concluida" && "text-muted line-through")}>
+                      {a.tipo ? TIPO_ACAO[a.tipo] : "Ação"}
+                    </div>
                     <p className="line-clamp-2 text-[13px] leading-5 text-body">{a.descricao}</p>
                   </div>
                   <div className="text-[13px] leading-5">
@@ -149,7 +162,7 @@ async function ListaAcoes({ f, usuarioId }: { f: FiltrosAcoes; usuarioId: string
                     </div>
                   </div>
                   <StatusSelect
-                    key={`${a.id}-${a.status}`}
+                    key={`status-${a.id}-${a.status}`}
                     id={a.id ?? ""}
                     campoId="acaoId"
                     valor={a.status ?? "pendente"}

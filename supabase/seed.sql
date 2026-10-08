@@ -436,5 +436,115 @@ select '00000000-0000-4000-8000-000000000002', c.id, 'F' || (9000 + g)::text, 1 
 from public.cursos c, generate_series(1, 5) g
 where c.instituicao_id = '00000000-0000-4000-8000-000000000002';
 
+
+-- ---------------------------------------------------------------------------
+-- Carreira e estágio (Engenharia de Produção). Empresas e vagas fictícias.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  v_inst constant uuid := '00000000-0000-4000-8000-000000000001';
+  v_curso uuid := (select id from public.cursos where instituicao_id = v_inst and nome = 'Engenharia de Produção');
+  v_estudante uuid := (select id from public.estudantes where codigo = 'A04112');
+  v_vaga uuid;
+  v_area uuid;
+  r record;
+begin
+  insert into public.competencias (instituicao_id, nome)
+  select v_inst, n from unnest(array[
+    'Mapeamento de processos', 'Excel', '5S', 'Estatística básica', 'Ferramentas Lean', 'Trabalho em equipe',
+    'Planejamento da produção', 'Gestão de estoques', 'Sistema ERP', 'Indicadores logísticos',
+    'Ferramentas da qualidade', 'Noções de ISO 9001', 'Controle estatístico de processo',
+    'Comunicação', 'Raciocínio quantitativo'
+  ]) n;
+
+  -- Competências reconhecidas do estudante A04112 (protótipo: Minhas competências).
+  insert into public.estudante_competencias (estudante_id, competencia_id, instituicao_id, nivel, progresso, origem)
+  select v_estudante, c.id, v_inst, x.nivel::public.nivel_competencia, x.progresso, x.origem
+  from (values
+    ('Mapeamento de processos', 'tem', 70, 'Introdução à Engenharia de Produção'),
+    ('Raciocínio quantitativo', 'tem', 55, 'Cálculo I e Estatística'),
+    ('Ferramentas da qualidade', 'desenvolvendo', 50, 'Projeto integrador'),
+    ('Comunicação', 'tem', 65, 'Atividades em grupo'),
+    ('Trabalho em equipe', 'tem', 65, 'Atividades em grupo'),
+    ('Excel', 'tem', 45, 'Informática aplicada'),
+    ('5S', 'tem', 40, 'Projeto integrador'),
+    ('Estatística básica', 'desenvolvendo', 35, 'Estatística'),
+    ('Gestão de estoques', 'desenvolvendo', 20, 'Introdução à Engenharia de Produção')
+  ) x(nome, nivel, progresso, origem)
+  join public.competencias c on c.instituicao_id = v_inst and c.nome = x.nome;
+
+  insert into public.empresas (instituicao_id, nome, setor, areas, cidade, distancia_campus_km) values
+    (v_inst, 'Siderúrgica Vale do Aço', 'Siderurgia', 'Melhoria contínua, qualidade e manutenção', 'Volta Redonda, RJ', 4),
+    (v_inst, 'Cimentos Sul Fluminense', 'Materiais de construção', 'Qualidade e processos', 'Volta Redonda, RJ', 7),
+    (v_inst, 'Centro de Distribuição Dutra', 'Logística', 'Armazenagem, transporte e estoques', 'Barra Mansa, RJ', 12),
+    (v_inst, 'Metalúrgica Barra Mansa', 'Metalurgia', 'PCP e segurança do trabalho', 'Barra Mansa, RJ', 14),
+    (v_inst, 'Autopeças Paraíba do Sul', 'Automotivo', 'PCP, logística e qualidade', 'Resende, RJ', 45),
+    (v_inst, 'Montadora Agulhas Negras', 'Automotivo', 'Engenharia de processos e Lean', 'Resende, RJ', 52);
+
+  for r in
+    select * from (values
+      ('Siderúrgica Vale do Aço', 'Estágio em Melhoria Contínua', 'Volta Redonda, RJ', 3, '6 horas por dia',
+       'Apoiar projetos de melhoria na laminação. Coletar dados de processo, atualizar indicadores e participar de eventos kaizen com a equipe de operação.',
+       array['Mapeamento de processos', 'Excel', '5S', 'Estatística básica', 'Ferramentas Lean']),
+      ('Autopeças Paraíba do Sul', 'Estágio em PCP', 'Resende, RJ', 4, '6 horas por dia',
+       'Acompanhar a programação de produção, conferir ordens e estoques intermediários e apoiar o planejamento semanal das linhas de montagem.',
+       array['Excel', 'Trabalho em equipe', 'Planejamento da produção', 'Gestão de estoques', 'Sistema ERP']),
+      ('Centro de Distribuição Dutra', 'Estágio em Logística', 'Barra Mansa, RJ', 2, '4 horas por dia',
+       'Apoiar o controle de recebimento e expedição, acompanhar indicadores de entrega e propor melhorias no layout do armazém.',
+       array['Excel', 'Mapeamento de processos', 'Gestão de estoques', 'Indicadores logísticos']),
+      ('Cimentos Sul Fluminense', 'Estágio em Qualidade', 'Volta Redonda, RJ', 3, '6 horas por dia',
+       'Apoiar o controle de qualidade, registrar não conformidades, acompanhar auditorias internas e manter os procedimentos atualizados.',
+       array['5S', 'Ferramentas da qualidade', 'Noções de ISO 9001', 'Controle estatístico de processo'])
+    ) t(empresa, titulo, cidade, periodo, carga, descricao, comps)
+  loop
+    insert into public.vagas (instituicao_id, empresa_id, curso_id, titulo, descricao, cidade, periodo_minimo, carga_horaria)
+    values (v_inst, (select id from public.empresas where instituicao_id = v_inst and nome = r.empresa), v_curso,
+            r.titulo, r.descricao, r.cidade, r.periodo, r.carga)
+    returning id into v_vaga;
+    insert into public.vaga_competencias (vaga_id, competencia_id, instituicao_id)
+    select v_vaga, c.id, v_inst from public.competencias c where c.instituicao_id = v_inst and c.nome = any (r.comps);
+  end loop;
+
+  insert into public.trilha_carreira_etapas (instituicao_id, curso_id, periodo, titulo, descricao, entrega) values
+    (v_inst, v_curso, 1, 'Autoconhecimento', 'Conheça as áreas da profissão e descubra seus interesses.', 'Perfil profissional preenchido'),
+    (v_inst, v_curso, 2, 'Ferramentas básicas', 'Excel, comunicação escrita e organização de estudos.', 'Certificado de Excel básico'),
+    (v_inst, v_curso, 3, 'Primeiro currículo', 'Monte o currículo com IA e crie seu perfil profissional online.', 'Currículo revisado'),
+    (v_inst, v_curso, 4, 'Prática', 'Projeto de extensão, empresa júnior ou monitoria.', 'Uma experiência registrada'),
+    (v_inst, v_curso, 5, 'Processo seletivo', 'Treino de entrevista, dinâmica de grupo e testes online.', 'Simulado de entrevista'),
+    (v_inst, v_curso, 6, 'Estágio obrigatório', 'Candidaturas, termo de compromisso e início do estágio.', 'Contrato de estágio assinado');
+
+  for r in
+    select * from (values
+      (1, 'Qualidade', 'Garante que produtos e serviços atendam aos requisitos. É porta de entrada frequente para estágio na indústria.',
+       array['Fundamentos|Conceitos de qualidade, 5S e as sete ferramentas.', 'Normas|Noções de ISO 9001 e gestão por processos.',
+             'Estatística|Controle estatístico de processo e capacidade.', 'Prática|Auditoria interna simulada e tratamento de não conformidade.']),
+      (2, 'Logística', 'Cuida do fluxo de materiais do fornecedor ao cliente. Tem muitas vagas em centros de distribuição da região.',
+       array['Fundamentos|Cadeia de suprimentos, modais e armazenagem.', 'Estoques|Curva ABC, inventário e ponto de pedido.',
+             'Indicadores|Nível de serviço, giro e custo logístico.', 'Prática|Estudo de layout de um armazém.']),
+      (3, 'PCP', 'Planeja o que, quanto e quando produzir. Exige raciocínio com números e visão do processo inteiro.',
+       array['Fundamentos|Sistemas de produção e previsão de demanda.', 'Planejamento|Plano mestre, MRP e capacidade.',
+             'Programação|Sequenciamento, Kanban e controle de ordens.', 'Prática|Simulação de programação em planilha.']),
+      (4, 'Melhoria contínua', 'Reduz desperdícios e resolve problemas com método.',
+       array['Fundamentos Lean|Os sete desperdícios e o pensamento enxuto.', 'Ferramentas|Mapa de fluxo de valor, kaizen e trabalho padronizado.',
+             'Solução de problemas|PDCA, A3 e análise de causa raiz.', 'Prática|Projeto de melhoria em um processo real.']),
+      (5, 'Dados e pesquisa operacional', 'Usa modelos e dados para apoiar decisões. Cresce junto com a digitalização das fábricas.',
+       array['Planilhas avançadas|Tabelas dinâmicas e funções de busca.', 'Estatística aplicada|Descritiva, correlação e regressão.',
+             'Otimização|Programação linear e simulação.', 'Prática|Painel de indicadores com dados reais.'])
+    ) t(ordem, nome, descricao, passos)
+  loop
+    insert into public.areas_atuacao (instituicao_id, curso_id, nome, descricao, ordem)
+    values (v_inst, v_curso, r.nome, r.descricao, r.ordem) returning id into v_area;
+    insert into public.area_passos (instituicao_id, area_id, ordem, titulo, descricao)
+    select v_inst, v_area, p.ordinality, split_part(p.passo, '|', 1), split_part(p.passo, '|', 2)
+    from unnest(r.passos) with ordinality p(passo, ordinality);
+  end loop;
+
+  -- Métricas do modelo de demonstração (base simulada, conforme o protótipo).
+  insert into public.metricas_modelo (instituicao_id, modelo_versao, momento, auc, captura_top20, periodo_treino, periodo_teste, base_simulada) values
+    (v_inst, 'demo-2026.1', 'matricula', 0.75, 45, '2024.1 a 2025.2', '2026.1', true),
+    (v_inst, 'demo-2026.1', 'quatro_semanas', 0.85, 62, '2024.1 a 2025.2', '2026.1', true);
+end;
+$$;
+
 -- Os triggers de auditoria registram as inserções do seed; a trilha começa limpa.
 delete from public.audit_log;

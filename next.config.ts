@@ -4,6 +4,8 @@ import type { NextConfig } from "next";
 // por usuário (RLS), então não há shell estático a aproveitar e o cache de dados sensíveis
 // aumentaria o risco de exposição. Renderização dinâmica por requisição é o comportamento desejado.
 const nextConfig: NextConfig = {
+  // Permite um build de verificação em paralelo ao `next dev` (ex.: NEXT_DIST_DIR=.next-build).
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   poweredByHeader: false,
   turbopack: {
     rules: {
