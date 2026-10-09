@@ -39,9 +39,11 @@ export async function carregarJornada(userId: string) {
       .eq("estudante_id", estudante.id)
       .order("progresso", { ascending: false }),
     supabase
-      .from("curriculos")
-      .select("resumo, competencias_texto, experiencia_texto, curriculo_gerado_em")
+      .from("curriculo_versoes")
+      .select("id, titulo, created_at")
       .eq("estudante_id", estudante.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
       .maybeSingle(),
   ]);
 
@@ -58,7 +60,7 @@ export async function carregarJornada(userId: string) {
       competencias: (competencias.data ?? []).flatMap((c) =>
         c.competencias ? [{ nome: c.competencias.nome, nivel: c.nivel, progresso: c.progresso, origem: c.origem }] : [],
       ),
-      curriculo: curriculo.data,
+      ultimaVersao: curriculo.data,
     },
   };
 }

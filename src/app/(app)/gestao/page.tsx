@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BarList, ColumnChart, LineChart } from "@/components/charts/charts";
 import { FAIXA, RiskBadge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
+import { ButtonLink, DownloadLink } from "@/components/ui/button";
 import { KpiCard, PageHeader, Panel } from "@/components/ui/panel";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { Delta } from "@/features/gestao/delta";
@@ -30,9 +30,7 @@ export default async function GestaoPage() {
         }
         title="Visão geral da instituição"
         actions={
-          <ButtonLink href="/gestao/relatorio" variant="secondary" prefetch={false}>
-            Exportar relatório
-          </ButtonLink>
+          <DownloadLink href="/gestao/relatorio">Exportar relatório</DownloadLink>
         }
       />
 
@@ -157,8 +155,8 @@ export default async function GestaoPage() {
             <h2 className="text-lg leading-7 font-bold">Principais motivos de desligamento</h2>
             <p className="mb-4 text-[13px] leading-5 text-muted">
               {d.motivos.ok && d.motivos.data.length > 0
-                ? `Principal dificuldade declarada em ${num(d.motivos.data[0].total_respostas)} questionários respondidos com consentimento`
-                : "Principal dificuldade declarada nos questionários respondidos com consentimento"}
+                ? `Dificuldades declaradas em ${num(d.motivos.data[0].total_respostas)} questionários respondidos. Cada aluno pode marcar mais de uma.`
+                : "Dificuldades declaradas nos questionários de desligamento"}
             </p>
             {d.insight.ok && d.insight.data[0] && (
               <div className="flex flex-col gap-1.5 rounded-card bg-tint p-4">

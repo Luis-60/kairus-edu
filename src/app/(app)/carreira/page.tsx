@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, type Tone } from "@/components/ui/badge";
+import { ButtonLink } from "@/components/ui/button";
 import { PageHeader, Panel } from "@/components/ui/panel";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { CandidatarButton } from "@/features/carreira/candidatar-button";
 import { carregarCarreira, type SituacaoCompetencia } from "@/features/carreira/queries";
-import { VivenciasForm } from "@/features/ia/vivencias-form";
 import { requirePapel } from "@/lib/auth/session";
 import { cn } from "@/lib/cn";
 
@@ -238,50 +238,16 @@ export default async function CarreiraPage({ searchParams }: PageProps<"/carreir
         </Panel>
       )}
 
-      <Panel id="curriculo">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="flex min-w-0 flex-col gap-3">
-            <div>
-              <h2 className="text-lg leading-7 font-bold">Monte seu currículo com IA</h2>
-              <p className="text-[13px] leading-5 text-muted">
-                Conte com suas palavras o que você já fez na vida, em trabalho, família, igreja, esporte ou voluntariado. A
-                IA transforma isso em competências técnicas para o currículo.
-              </p>
-            </div>
-            <VivenciasForm textoAtual={c.vivencias.texto} />
+      <Panel id="curriculo" flat>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0 max-w-160">
+            <h2 className="text-lg leading-7 font-bold">Monte seu currículo com IA</h2>
+            <p className="text-[13px] leading-5 text-muted">
+              Conte o que você já fez, em trabalho, família, voluntariado ou projetos. A IA ajuda a reconhecer competências
+              e você confirma o que entra no currículo.
+            </p>
           </div>
-
-          <div className="min-w-0">
-            {c.vivencias.competencias.length === 0 ? (
-              <div className="flex h-full min-h-40 items-center justify-center rounded-card border border-dashed border-line bg-canvas p-6 text-center text-[13px] leading-5 text-muted">
-                As competências sugeridas pela IA aparecem aqui.
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-2 rounded-card bg-tint p-4">
-                  <span className="label-caps text-primary">Competências identificadas pela IA</span>
-                  <ul className="flex flex-col gap-2">
-                    {c.vivencias.competencias.map((k) => (
-                      <li key={k.competencia} className="rounded-control bg-surface px-3 py-2">
-                        <div className="font-bold">{k.competencia}</div>
-                        <div className="text-[13px] leading-5 text-muted">A partir de “{k.origem}”</div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                {c.vivencias.experiencia && (
-                  <div className="rounded-card border border-line p-4">
-                    <div className="label-caps mb-1 text-muted">Como fica no currículo</div>
-                    <p className="text-body">{c.vivencias.experiencia}</p>
-                  </div>
-                )}
-                <p className="text-[13px] leading-5 text-muted">
-                  Texto gerado por IA. Revise e confirme que tudo corresponde ao que você viveu. Ele entra no seu currículo
-                  em <Link href="/minha-jornada#curriculo" className="font-semibold text-primary hover:text-primary-hover">Minha jornada</Link>.
-                </p>
-              </div>
-            )}
-          </div>
+          <ButtonLink href="/curriculo/perfil">Montar meu currículo</ButtonLink>
         </div>
       </Panel>
 

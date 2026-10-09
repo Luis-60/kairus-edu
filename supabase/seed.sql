@@ -7,6 +7,7 @@
 --   coordenador.direito@demo.kairusedu.dev  Coordenação de Direito
 --   estudante@demo.kairusedu.dev       Estudante A04112
 --   gestor@outra.kairusedu.dev         Gestão de outra instituição (teste de isolamento)
+--   apoio@demo.kairusedu.dev           Equipe de apoio ao estudante (vê respostas individuais, exceto saúde)
 
 select setseed(0.42);
 
@@ -19,7 +20,8 @@ insert into seed_usuarios values
   ('10000000-0000-4000-8000-000000000002', 'coordenador@demo.kairusedu.dev', 'Rafael Antunes', 'coordenador', '00000000-0000-4000-8000-000000000001'),
   ('10000000-0000-4000-8000-000000000003', 'coordenador.direito@demo.kairusedu.dev', 'Patrícia Gomes', 'coordenador', '00000000-0000-4000-8000-000000000001'),
   ('10000000-0000-4000-8000-000000000004', 'estudante@demo.kairusedu.dev', 'Estudante Demonstração', 'estudante', '00000000-0000-4000-8000-000000000001'),
-  ('10000000-0000-4000-8000-000000000005', 'gestor@outra.kairusedu.dev', 'Gestão Outra Instituição', 'gestor', '00000000-0000-4000-8000-000000000002');
+  ('10000000-0000-4000-8000-000000000005', 'gestor@outra.kairusedu.dev', 'Gestão Outra Instituição', 'gestor', '00000000-0000-4000-8000-000000000002'),
+  ('10000000-0000-4000-8000-000000000006', 'apoio@demo.kairusedu.dev', 'Marina Lopes', 'apoio', '00000000-0000-4000-8000-000000000001');
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -306,26 +308,43 @@ from public.vinculos_periodo vp
 join public.periodos_letivos pl on pl.id = vp.periodo_letivo_id and pl.codigo = '2026.1'
 where vp.situacao_final in ('trancado', 'cancelado');
 
--- Distribuição dos motivos aproximando a do protótipo (25, 24, 22, 10, 9, 4, restante outro).
-insert into public.respostas_desligamento (instituicao_id, pedido_id, motivo_principal, consentimento, respondida_em)
-select p.instituicao_id, p.id,
-       case when p.s < 0.25 then 'acesso_internet_equipamento'
-            when p.s < 0.49 then 'financeira'
-            when p.s < 0.71 then 'trabalho_estudo'
-            when p.s < 0.81 then 'deslocamento'
-            when p.s < 0.90 then 'dificuldade_conteudo'
-            when p.s < 0.94 then 'adaptacao_curso'
-            else 'outro' end::public.motivo_desligamento,
-       true, p.aberto_em + interval '1 day'
--- Distribuição por posição (determinística); 4 de cada 5 pedidos respondem à pesquisa.
-from (
-  select q.*, (q.n - 1)::numeric / q.total as s
-  from (
-    select p.*, row_number() over (order by p.id) as n, count(*) over () as total
-    from public.pedidos_desligamento p
-  ) q
-  where q.n % 5 <> 0
-) p;
+-- Cada pedido ganha um questionário (trigger). 4 de cada 5 respondem; a distribuição dos
+-- motivos aproxima a do protótipo e parte dos alunos marca um segundo motivo.
+create temp table seed_q as
+select q.id, q.instituicao_id, p.aberto_em,
+       row_number() over (order by p.id) as n,
+       (row_number() over (order by p.id) - 1)::numeric / count(*) over () as s
+from public.pedidos_desligamento p
+join public.questionarios_desligamento q on q.pedido_id = p.id;
+
+insert into public.questionario_motivos (questionario_id, instituicao_id, motivo)
+select q.id, q.instituicao_id,
+       case when q.s < 0.25 then 'acesso_internet_equipamento'
+            when q.s < 0.49 then 'financeira'
+            when q.s < 0.71 then 'trabalho_estudo'
+            when q.s < 0.81 then 'deslocamento'
+            when q.s < 0.90 then 'dificuldade_conteudo'
+            when q.s < 0.94 then 'adaptacao_curso'
+            else 'outro' end::public.motivo_desligamento
+from seed_q q where q.n % 5 <> 0;
+
+insert into public.questionario_motivos (questionario_id, instituicao_id, motivo)
+select q.id, q.instituicao_id, case when q.s between 0.49 and 0.71 then 'financeira' else 'trabalho_estudo' end::public.motivo_desligamento
+from seed_q q where q.n % 5 <> 0 and q.n % 3 = 0
+on conflict do nothing;
+
+update public.questionarios_desligamento qd
+   set status = 'enviado', ciencia_em = q.aberto_em + interval '1 day',
+       reconsideraria = (array['nao', 'nao', 'talvez', 'prefiro_nao_responder']::public.resposta_reconsideracao[])[1 + q.n % 4]
+  from seed_q q where q.id = qd.id and q.n % 5 <> 0;
+
+update public.questionarios_desligamento qd set status = 'encerrado'
+  from seed_q q where q.id = qd.id and q.n % 5 = 0;
+
+-- Datas reais de envio (o trigger usa now() no envio).
+update public.questionarios_desligamento qd
+   set iniciado_em = q.aberto_em + interval '1 day', enviado_em = q.aberto_em + interval '1 day'
+  from seed_q q where q.id = qd.id and qd.status = 'enviado';
 
 -- Três pedidos abertos na Engenharia de Produção (dois já sinalizados) e alguns em outros cursos.
 insert into public.pedidos_desligamento (instituicao_id, estudante_id, tipo, status, aberto_em)
@@ -358,14 +377,48 @@ from (
   ) r
 ) x;
 
-insert into public.respostas_desligamento (instituicao_id, pedido_id, motivo_principal, consentimento, respondida_em)
-select p.instituicao_id, p.id,
-       (array['financeira', 'trabalho_estudo', 'acesso_internet_equipamento']::public.motivo_desligamento[])[1 + (row_number() over (order by p.aberto_em))::int % 3],
-       true, p.aberto_em + interval '1 day'
+-- Cinco dos pedidos abertos já têm o questionário respondido.
+create temp table seed_q_abertos as
+select q.id, q.instituicao_id, p.aberto_em, row_number() over (order by p.aberto_em) as n
 from public.pedidos_desligamento p
+join public.questionarios_desligamento q on q.pedido_id = p.id
 where p.status = 'aberto'
 order by p.aberto_em
 limit 5;
+
+insert into public.questionario_motivos (questionario_id, instituicao_id, motivo)
+select q.id, q.instituicao_id,
+       (array['financeira', 'trabalho_estudo', 'acesso_internet_equipamento']::public.motivo_desligamento[])[1 + q.n::int % 3]
+from seed_q_abertos q;
+
+insert into public.questionario_respostas (questionario_id, instituicao_id, pergunta, valor)
+select q.id, q.instituicao_id, 'comentario_final',
+       to_jsonb('Gostaria de continuar se conseguir conciliar com o trabalho.'::text)
+from seed_q_abertos q where q.n = 1;
+
+update public.questionarios_desligamento qd
+   set status = 'enviado', ciencia_em = q.aberto_em + interval '1 day',
+       reconsideraria = (array['sim', 'talvez']::public.resposta_reconsideracao[])[1 + q.n::int % 2]
+  from seed_q_abertos q where q.id = qd.id;
+
+update public.questionarios_desligamento qd
+   set iniciado_em = q.aberto_em + interval '1 day', enviado_em = q.aberto_em + interval '1 day'
+  from seed_q_abertos q where q.id = qd.id;
+
+-- O estudante de demonstração (A04112) tem um pedido de trancamento aberto, com questionário pendente.
+insert into public.pedidos_desligamento (instituicao_id, estudante_id, tipo, status, aberto_em)
+select e.instituicao_id, e.id, 'trancamento', 'aberto', timestamptz '2026-10-05 10:00'
+from public.estudantes e where e.codigo = 'A04112';
+
+-- Serviços de apoio que a instituição oferece de fato (o questionário só oferece estes).
+insert into public.servicos_apoio (instituicao_id, nome, descricao, categoria, contato, ordem) values
+  ('00000000-0000-4000-8000-000000000001', 'Bolsas e renegociação', 'Bolsas de permanência, renegociação de parcelas e plano de pagamento.', 'financeiro', 'Setor financeiro, bloco A', 1),
+  ('00000000-0000-4000-8000-000000000001', 'Monitoria e tutoria', 'Monitoria por disciplina e tutoria de acolhimento com professores.', 'academico', 'Coordenação do curso', 2),
+  ('00000000-0000-4000-8000-000000000001', 'Atendimento psicológico', 'Acolhimento psicológico gratuito e sigiloso para estudantes.', 'psicologico', 'Núcleo de apoio psicopedagógico', 3),
+  ('00000000-0000-4000-8000-000000000001', 'Ajuste de grade e turno', 'Troca de turno, disciplinas a distância e redução de carga no semestre.', 'horario', 'Secretaria acadêmica', 4),
+  ('00000000-0000-4000-8000-000000000001', 'Orientação de carreira e estágio', 'Orientação profissional, vagas de estágio e preparação para processos seletivos.', 'estagio', 'Central de carreiras', 5);
+
+update public.perfis set ve_respostas_desligamento = true where id = '10000000-0000-4000-8000-000000000006';
 
 -- ---------------------------------------------------------------------------
 -- Ações de permanência
@@ -545,6 +598,61 @@ begin
     (v_inst, 'demo-2026.1', 'quatro_semanas', 0.85, 62, '2024.1 a 2025.2', '2026.1', true);
 end;
 $$;
+
+
+-- ---------------------------------------------------------------------------
+-- Empregabilidade: perfis de carreira fictícios (alunos sem conta), só para os agregados.
+-- ---------------------------------------------------------------------------
+create temp table seed_carreira as
+select e.id, e.instituicao_id, c.nome as curso, row_number() over (order by e.id) as n
+from public.estudantes e join public.cursos c on c.id = e.curso_id
+where e.situacao = 'ativo' and e.perfil_id is null and e.instituicao_id = '00000000-0000-4000-8000-000000000001'
+  and (hashtext(e.id::text) % 5) = 0;
+
+insert into public.perfis_profissionais (estudante_id, instituicao_id, tipo_vaga, area_interesse, email_contato, telefone)
+select id, instituicao_id,
+       (array['estagio', 'estagio', 'estagio', 'emprego', 'trainee'])[1 + n % 5],
+       case curso
+         when 'Análise e Desenvolvimento de Sistemas' then (array['Desenvolvimento web', 'Suporte técnico', 'Dados'])[1 + n % 3]
+         when 'Engenharia de Produção' then (array['Qualidade', 'Logística', 'Melhoria contínua'])[1 + n % 3]
+         when 'Administração' then (array['Finanças', 'Recursos humanos', 'Marketing'])[1 + n % 3]
+         when 'Logística' then 'Logística'
+         else (array['Educação', 'Saúde', 'Atendimento'])[1 + n % 3] end,
+       case when n % 3 <> 0 then 'aluno' || n || '@exemplo.com' end,
+       case when n % 3 <> 0 then '(24) 90000-0000' end
+from seed_carreira;
+
+insert into public.experiencias (estudante_id, instituicao_id, tipo, cargo, atividades)
+select id, instituicao_id, (array['informal', 'atividade', 'estagio', 'voluntario'])[1 + n % 4]::public.tipo_experiencia,
+       'Experiência de demonstração', 'Atividade fictícia criada para os indicadores agregados.'
+from seed_carreira where n % 4 <> 0;
+
+insert into public.habilidades (estudante_id, instituicao_id, nome, categoria, origem, status)
+select sc.id, sc.instituicao_id, h.nome, h.categoria::public.categoria_habilidade, 'aluno', 'confirmada'
+from seed_carreira sc
+cross join lateral (
+  select * from (values
+    ('Excel', 'tecnica'), ('Comunicação', 'comportamental'), ('Trabalho em equipe', 'comportamental'),
+    ('Atendimento ao cliente', 'comportamental'), ('Pacote Office', 'tecnica'),
+    ('Python', 'tecnica'), ('SQL', 'tecnica'), ('Git', 'tecnica'), ('Organização', 'comportamental')
+  ) v(nome, categoria)
+  where (v.nome in ('Python', 'SQL', 'Git') and sc.curso = 'Análise e Desenvolvimento de Sistemas' and (hashtext(v.nome || sc.id) % 3) <> 0)
+     or (v.nome not in ('Python', 'SQL', 'Git') and (hashtext(v.nome || sc.id) % 2) = 0)
+) h;
+
+insert into public.analises_vaga (estudante_id, instituicao_id, origem, titulo, resultado)
+select id, instituicao_id, 'colada', 'Vaga de demonstração',
+       jsonb_build_object('cargo', 'Vaga de demonstração', 'aderencia', 50, 'recomendacao', '',
+         'requisitos', jsonb_build_array(
+           jsonb_build_object('nome', case when curso = 'Análise e Desenvolvimento de Sistemas' then 'Git' else 'Power BI' end,
+                              'tipo', 'obrigatorio', 'situacao', 'nao_confirmado', 'evidencias', '[]'::jsonb, 'comentario', ''),
+           jsonb_build_object('nome', 'Inglês intermediário', 'tipo', 'desejavel',
+                              'situacao', case when n % 2 = 0 then 'nao_confirmado' else 'confirmado' end, 'evidencias', '[]'::jsonb, 'comentario', '')))
+from seed_carreira where n % 2 = 0;
+
+insert into public.curriculo_versoes (estudante_id, instituicao_id, titulo, conteudo, storage_path)
+select id, instituicao_id, 'Currículo geral', '{}'::jsonb, 'demonstracao/sem-arquivo.pdf'
+from seed_carreira where n % 3 <> 0;
 
 -- Os triggers de auditoria registram as inserções do seed; a trilha começa limpa.
 delete from public.audit_log;

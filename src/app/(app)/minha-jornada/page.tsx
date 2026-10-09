@@ -4,8 +4,7 @@ import { EmptyState, ErrorState } from "@/components/ui/states";
 import { ButtonLink } from "@/components/ui/button";
 import { Meter } from "@/components/ui/states";
 import { ApoioDialog } from "@/features/apoio/apoio-dialog";
-import { gerarCurriculo } from "@/features/ia/actions";
-import { GerarButton } from "@/features/ia/gerar-button";
+import { questionariosPendentes } from "@/features/desligamento/queries";
 import { carregarJornada } from "@/features/estudante/queries";
 import { requirePapel } from "@/lib/auth/session";
 import { cn } from "@/lib/cn";
@@ -16,7 +15,7 @@ export const metadata: Metadata = { title: "Minha jornada" };
 
 export default async function MinhaJornadaPage() {
   const sessao = await requirePapel("estudante");
-  const jornada = await carregarJornada(sessao.userId);
+  const [jornada, pendentes] = await Promise.all([carregarJornada(sessao.userId), questionariosPendentes(sessao.userId)]);
 
   if (!jornada.ok) {
     return (
@@ -54,6 +53,20 @@ export default async function MinhaJornadaPage() {
   return (
     <>
       <PageHeader eyebrow={`${j.curso}, ${j.periodoAtual}º período, matrícula ${j.codigo}`} title="Minha jornada" />
+
+      {pendentes.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-primary bg-surface p-4">
+          <div className="min-w-0">
+            <p className="font-semibold">Você tem um questionário sobre o seu pedido de desligamento.</p>
+            <p className="text-[13px] leading-5 text-muted">
+              É opcional e leva poucos minutos. Suas respostas ajudam a instituição a oferecer o apoio certo.
+            </p>
+          </div>
+          <ButtonLink href={`/situacao-academica/questionario/${pendentes[0].id}`}>
+            {pendentes[0].status === "pendente" ? "Responder" : "Continuar"}
+          </ButtonLink>
+        </div>
+      )}
 
       <Panel>
         <div className="mb-5 flex flex-wrap justify-between gap-3">
@@ -153,56 +166,23 @@ export default async function MinhaJornadaPage() {
 
         <Panel
           id="curriculo"
-          title="Currículo profissional com IA"
-          description="A IA transforma sua formação e suas competências em um currículo pronto para estágio e emprego."
+          title="Meu currículo"
+          description="Monte seu perfil profissional, confirme suas competências e gere um currículo em PDF pronto para sistemas de recrutamento."
         >
-          {!j.curriculo?.resumo ? (
-            <div className="flex flex-col items-start gap-3 rounded-card border border-dashed border-line bg-canvas p-5">
-              <span className="text-body">Seu currículo ainda não foi gerado.</span>
-              <GerarButton acao={gerarCurriculo} rotulo="Gerar currículo com IA" rotuloPendente="Montando seu currículo…" />
+          {j.ultimaVersao ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-body">
+                Última versão: <span className="font-semibold">{j.ultimaVersao.titulo}</span>, gerada em{" "}
+                {dataCurta(j.ultimaVersao.created_at)}.
+              </p>
+              <ButtonLink href="/curriculo" variant="secondary" className="self-start">
+                Abrir meu currículo
+              </ButtonLink>
             </div>
           ) : (
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-4 rounded-card border border-line p-5">
-                <div>
-                  <div className="text-lg leading-7 font-bold">{sessao.nome}</div>
-                  <div className="text-[13px] leading-5 text-muted">
-                    Estudante de {j.curso}, {j.periodoAtual}º período
-                  </div>
-                </div>
-                <div>
-                  <div className="label-caps mb-1 text-muted">Resumo</div>
-                  <p className="text-body">{j.curriculo.resumo}</p>
-                </div>
-                {j.curriculo.competencias_texto && (
-                  <div>
-                    <div className="label-caps mb-1 text-muted">Competências</div>
-                    <p className="text-body">{j.curriculo.competencias_texto}</p>
-                  </div>
-                )}
-                {j.curriculo.experiencia_texto && (
-                  <div>
-                    <div className="label-caps mb-1 text-muted">Experiência</div>
-                    <p className="text-body">{j.curriculo.experiencia_texto}</p>
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-wrap items-start gap-3">
-                <ButtonLink href="/minha-jornada/curriculo" variant="secondary">
-                  Baixar em PDF
-                </ButtonLink>
-                <GerarButton
-                  acao={gerarCurriculo}
-                  rotulo="Gerar novamente"
-                  rotuloPendente="Montando seu currículo…"
-                  variante="secondary"
-                />
-              </div>
-              <p className="text-[13px] leading-5 text-muted">
-                Texto gerado por IA
-                {j.curriculo.curriculo_gerado_em ? ` em ${dataCurta(j.curriculo.curriculo_gerado_em)}` : ""}. Revise antes
-                de enviar.
-              </p>
+            <div className="flex flex-col items-start gap-3 rounded-card border border-dashed border-line bg-canvas p-5">
+              <span className="text-body">Você ainda não gerou um currículo.</span>
+              <ButtonLink href="/curriculo/perfil">Montar meu currículo</ButtonLink>
             </div>
           )}
         </Panel>

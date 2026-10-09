@@ -41,3 +41,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Backups de banco (contêm dados pessoais)
+*.sql.bak
+backup*.sql
+backups/

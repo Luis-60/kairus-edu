@@ -8,13 +8,43 @@ export const MODALIDADE: Record<Enums["modalidade_curso"], string> = {
 };
 
 export const MOTIVO: Record<Enums["motivo_desligamento"], string> = {
-  acesso_internet_equipamento: "Acesso a internet ou equipamento",
-  financeira: "Financeira",
+  financeira: "Dificuldade financeira",
   trabalho_estudo: "Conciliar trabalho e estudo",
-  deslocamento: "Deslocamento",
+  deslocamento: "Transporte ou deslocamento",
+  acesso_internet_equipamento: "Falta de acesso a computador ou internet",
   dificuldade_conteudo: "Dificuldade com o conteúdo",
-  adaptacao_curso: "Adaptação ao curso",
+  insatisfacao_curso: "Insatisfação com o curso",
+  identificacao_carreira: "Não se identificar com a carreira",
+  pessoal_familiar: "Questões pessoais ou familiares",
+  saude: "Saúde física ou mental",
+  adaptacao_curso: "Adaptação à vida universitária",
+  falta_oportunidades: "Falta de oportunidades profissionais",
   outro: "Outro motivo",
+};
+
+export const STATUS_QUESTIONARIO: Record<Enums["status_questionario"], string> = {
+  pendente: "Não iniciada",
+  em_andamento: "Em andamento",
+  enviado: "Respondida",
+  recusado: "Preferiu não responder",
+  encerrado: "Encerrada sem resposta",
+};
+
+export const RECONSIDERACAO: Record<Enums["resposta_reconsideracao"], string> = {
+  sim: "Sim",
+  talvez: "Talvez",
+  nao: "Não",
+  prefiro_nao_responder: "Prefiro não responder",
+};
+
+export const CATEGORIA_SERVICO: Record<Enums["categoria_servico"], string> = {
+  financeiro: "Apoio financeiro",
+  academico: "Apoio acadêmico",
+  psicologico: "Apoio psicológico",
+  carreira: "Orientação de carreira",
+  horario: "Flexibilização de horários",
+  estagio: "Estágio e emprego",
+  outro: "Outro apoio",
 };
 
 export const TIPO_ACAO: Record<Enums["tipo_acao"], string> = {

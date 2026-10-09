@@ -1,20 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 import { gerarEstruturado, MENSAGEM_ERRO_IA } from "@/lib/ai/cliente";
 import { getSessao } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { carregarVisaoGeral } from "@/features/gestao/queries";
 import { MOTIVO } from "@/lib/labels";
-import {
-  curriculoSchema,
-  insightsSchema,
-  SISTEMA_CURRICULO,
-  SISTEMA_INSIGHTS,
-  SISTEMA_VIVENCIAS,
-  vivenciasSchema,
-} from "./prompts";
+import { insightsSchema, SISTEMA_INSIGHTS } from "./prompts";
 
 export type IaState = {
   status: "idle" | "error" | "success";
@@ -23,148 +15,6 @@ export type IaState = {
 };
 
 const SEM_PERMISSAO: IaState = { status: "error", message: "Você não tem permissão para esta operação." };
-
-/** Estudante vinculado à conta atual (RLS garante que só o próprio registro é lido). */
-async function estudanteAtual(userId: string) {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("estudantes")
-    .select("id, instituicao_id, periodo_atual, cursos(nome)")
-    .eq("perfil_id", userId)
-    .maybeSingle();
-  return data;
-}
-
-const vivenciasInput = z.object({
-  vivencias: z
-    .string()
-    .trim()
-    .min(40, "Conte um pouco mais, com pelo menos 40 caracteres.")
-    .max(3000, "Use no máximo 3000 caracteres."),
-});
-
-export async function transformarVivencias(_prev: IaState, formData: FormData): Promise<IaState> {
-  const sessao = await getSessao();
-  if (!sessao || sessao.papel !== "estudante") return SEM_PERMISSAO;
-
-  const parsed = vivenciasInput.safeParse({ vivencias: formData.get("vivencias") });
-  if (!parsed.success) {
-    return { status: "error", fieldErrors: { vivencias: parsed.error.issues[0]?.message } };
-  }
-
-  const estudante = await estudanteAtual(sessao.userId);
-  if (!estudante) return SEM_PERMISSAO;
-
-  const resultado = await gerarEstruturado({
-    funcao: "vivencias",
-    sessao,
-    sistema: SISTEMA_VIVENCIAS,
-    conteudo: `Curso do estudante: ${estudante.cursos?.nome ?? "não informado"}\n\n<vivencias>\n${parsed.data.vivencias}\n</vivencias>`,
-    schema: vivenciasSchema,
-  });
-  if (!resultado.ok) return { status: "error", message: MENSAGEM_ERRO_IA[resultado.erro] };
-
-  if (!resultado.data.suficiente || resultado.data.competencias.length === 0) {
-    return {
-      status: "error",
-      message: "Não encontramos experiências no texto. Conte o que você fez, onde e por quanto tempo.",
-    };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.from("curriculos").upsert(
-    {
-      instituicao_id: estudante.instituicao_id,
-      estudante_id: estudante.id,
-      vivencias: parsed.data.vivencias,
-      competencias_vivencias: resultado.data.competencias,
-      experiencia_texto: resultado.data.texto_curriculo,
-      vivencias_geradas_em: new Date().toISOString(),
-    },
-    { onConflict: "estudante_id" },
-  );
-  if (error) {
-    console.error("[ia] falha ao salvar vivências", error.code);
-    return { status: "error", message: "As competências foram geradas, mas não foi possível salvá-las. Tente novamente." };
-  }
-
-  revalidatePath("/carreira");
-  revalidatePath("/minha-jornada");
-  return { status: "success" };
-}
-
-export async function gerarCurriculo(): Promise<IaState> {
-  const sessao = await getSessao();
-  if (!sessao || sessao.papel !== "estudante") return SEM_PERMISSAO;
-
-  const estudante = await estudanteAtual(sessao.userId);
-  if (!estudante) return SEM_PERMISSAO;
-
-  const supabase = await createClient();
-  const [{ data: competencias }, { data: curriculo }] = await Promise.all([
-    supabase
-      .from("estudante_competencias")
-      .select("nivel, competencias(nome)")
-      .eq("estudante_id", estudante.id)
-      .order("progresso", { ascending: false }),
-    supabase
-      .from("curriculos")
-      .select("competencias_vivencias, experiencia_texto")
-      .eq("estudante_id", estudante.id)
-      .maybeSingle(),
-  ]);
-
-  const reconhecidas = (competencias ?? []).flatMap((c) =>
-    c.competencias ? [`${c.competencias.nome} (${c.nivel === "tem" ? "consolidada" : "em desenvolvimento"})`] : [],
-  );
-  const dasVivencias = Array.isArray(curriculo?.competencias_vivencias)
-    ? (curriculo.competencias_vivencias as { competencia?: unknown }[]).flatMap((c) =>
-        typeof c.competencia === "string" ? [c.competencia] : [],
-      )
-    : [];
-
-  if (reconhecidas.length === 0 && dasVivencias.length === 0) {
-    return {
-      status: "error",
-      message: "Ainda não há competências para montar o currículo. Use primeiro “Monte seu currículo com IA” em Carreira e estágio.",
-    };
-  }
-
-  const dados = [
-    `Curso: ${estudante.cursos?.nome ?? "não informado"}`,
-    `Período atual: ${estudante.periodo_atual}º`,
-    `Competências reconhecidas pela instituição: ${reconhecidas.join("; ") || "nenhuma"}`,
-    `Competências descritas pelo estudante: ${dasVivencias.join("; ") || "nenhuma"}`,
-    `Experiência descrita pelo estudante: ${curriculo?.experiencia_texto ?? "nenhuma"}`,
-  ].join("\n");
-
-  const resultado = await gerarEstruturado({
-    funcao: "curriculo",
-    sessao,
-    sistema: SISTEMA_CURRICULO,
-    conteudo: `<dados>\n${dados}\n</dados>`,
-    schema: curriculoSchema,
-  });
-  if (!resultado.ok) return { status: "error", message: MENSAGEM_ERRO_IA[resultado.erro] };
-
-  const { error } = await supabase.from("curriculos").upsert(
-    {
-      instituicao_id: estudante.instituicao_id,
-      estudante_id: estudante.id,
-      resumo: resultado.data.resumo,
-      competencias_texto: resultado.data.competencias_texto,
-      curriculo_gerado_em: new Date().toISOString(),
-    },
-    { onConflict: "estudante_id" },
-  );
-  if (error) {
-    console.error("[ia] falha ao salvar currículo", error.code);
-    return { status: "error", message: "O currículo foi gerado, mas não foi possível salvá-lo. Tente novamente." };
-  }
-
-  revalidatePath("/minha-jornada");
-  return { status: "success" };
-}
 
 /** Insights para a gestão, gerados apenas a partir de indicadores agregados. */
 export async function gerarInsights(): Promise<IaState> {

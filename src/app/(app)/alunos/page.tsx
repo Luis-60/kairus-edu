@@ -30,7 +30,7 @@ const SITUACAO_ACAO: Record<string, string> = {
 };
 
 export default async function AlunosPage({ searchParams }: PageProps<"/alunos">) {
-  const sessao = await requirePapel("gestor", "coordenador");
+  const sessao = await requirePapel("gestor", "coordenador", "apoio");
   const filtros = filtrosSchema.parse(await searchParams);
 
   const [lista, resumo, cursos, periodo, ficha, equipe] = await Promise.all([

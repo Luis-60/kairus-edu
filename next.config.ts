@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   // Permite um build de verificação em paralelo ao `next dev` (ex.: NEXT_DIST_DIR=.next-build).
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   poweredByHeader: false,
+  experimental: {
+    serverActions: {
+      // Upload de currículo para o scanner (até 4 MB). Abaixo do teto de 4,5 MB da Vercel.
+      bodySizeLimit: "4.5mb",
+    },
+  },
   turbopack: {
     rules: {
       "*.css": {

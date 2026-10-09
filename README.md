@@ -25,8 +25,19 @@ Contas de demonstração (dados 100% fictícios). A senha de todas é `KairusDem
 | coordenador.direito@demo.kairusedu.dev | Coordenação de Direito |
 | estudante@demo.kairusedu.dev | Estudante (matrícula A04112) |
 | gestor@outra.kairusedu.dev | Gestão de outra instituição (teste de isolamento) |
+| apoio@demo.kairusedu.dev | Equipe de apoio ao estudante (lê respostas individuais, exceto saúde) |
 
 Os e-mails locais (recuperação de senha) aparecem no Mailpit, em http://127.0.0.1:54324.
+
+## Dados de demonstração em um banco já existente
+
+Se o banco remoto recebeu o seed antes das etapas A–D, aplique o complemento (idempotente):
+
+```bash
+npx supabase db query --linked -f supabase/demo/complemento-etapas-a-d.sql
+```
+
+Ele cria a conta `apoio@demo.kairusedu.dev`, os serviços de apoio, o pedido aberto do aluno A04112 e perfis de carreira fictícios para o painel de empregabilidade.
 
 ## Variáveis de ambiente
 
@@ -46,7 +57,7 @@ A aplicação não usa a chave secreta (service role) do Supabase. A chave do Op
 |---|---|
 | `pnpm dev` / `pnpm build` / `pnpm start` | Desenvolvimento, build e produção |
 | `pnpm lint` / `pnpm typecheck` | ESLint e TypeScript |
-| `pnpm db:start` / `pnpm db:stop` | Sobe ou para o Supabase local |
+| `pnpm db:start` / `pnpm db:stop` | Sobe ou para o Supabase local (inclui o Storage, usado pelos currículos) |
 | `pnpm db:reset` | Recria o banco com as migrations e o seed |
 | `pnpm db:types` | Regenera `src/types/database.ts` a partir do banco local |
 
@@ -76,9 +87,14 @@ supabase/
 | `/inteligencia` (modelo, fatores, segmentos e insights com IA) | sim | não | não |
 | `/alunos` (carteira priorizada e ficha) | todos os cursos | cursos que coordena | não |
 | `/acoes` (ações e pedidos de apoio) | todos os cursos | cursos que coordena | não |
-| `/desligamentos` | sim, com motivos agregados | cursos que coordena | não |
+| `/desligamentos` (pedidos, registro manual, análises) e `/desligamentos/[id]` | sim, com análises | cursos que coordena, sem análises | não |
+| `/situacao-academica` (matrícula, pedidos, apoio) e o questionário de desligamento | não | não | somente os próprios |
 | `/minha-jornada` (indicadores, competências, currículo com IA) | não | não | somente a própria |
-| `/carreira` (trilha, vagas e candidatura, áreas, empresas, vivências com IA) | não | não | somente a própria |
+| `/carreira` (trilha, vagas e candidatura, áreas, empresas) | não | não | somente a própria |
+| `/curriculo` (perfil profissional, competências, editor, PDF, scanner ATS) | não | não | somente o próprio |
+| `/empregabilidade` (indicadores agregados de carreira) | sim | não | não |
+| `/privacidade` (pedidos de titular, LGPD) | sim | não | não |
+| `/meus-dados` (exportar, excluir dados de carreira, pedidos de privacidade) | não | não | somente os próprios |
 
 ## Segurança e LGPD
 
@@ -96,22 +112,51 @@ supabase/
 - **Score de risco.** É produzido por um modelo externo e gravado em `avaliacoes_risco` (probabilidade, faixa, fatores, versão do modelo). A aplicação só exibe esses dados; nenhum modelo é simulado no app.
 - **Evasão.** Calculada como trancamento + cancelamento + abandono ao fim de cada semestre encerrado (`vinculos_periodo`).
 
+## Questionário de desligamento
+
+- **Abertura:** quando um pedido de trancamento ou cancelamento é aberto, pela integração ou por registro manual da equipe, o aluno recebe um questionário opcional. Ele tem 5 etapas (motivos, contexto, apoio, comentários e revisão), perguntas condicionais e salvamento automático. O catálogo de perguntas é versionado em `src/features/desligamento/questionario.ts`.
+- **Recusa:** responder é opcional. "Prefiro não responder" descarta o que foi salvo e não afeta o pedido.
+- **Risco no momento do pedido:** fica gravado (`faixa_no_pedido`) e nunca é reescrito por avaliações posteriores.
+- **Leitura individual:** só com a permissão `perfis.ve_respostas_desligamento`, e cada leitura é auditada. **Saúde** exige consentimento específico e nunca é exibida individualmente. Nos agregados, só aparece com 5 ocorrências ou mais.
+- **Recortes pequenos:** recortes com menos de 5 respondentes são suprimidos.
+- **Papel `apoio`:** equipe de apoio ao estudante, com visão da instituição inteira. Os serviços de apoio oferecidos no questionário vêm de `servicos_apoio`, para nunca prometer algo que a instituição não oferece.
+
+## Currículo e scanner ATS
+
+- **Perfil profissional em 7 etapas** (`/curriculo/perfil`): objetivo, contato, formação verificada, experiências (inclusive informais), vivências e projetos, competências, idiomas e certificações. As vivências usam perguntas que revelam competências ocultas: coordenação de grupo, organização de eventos, ajuda técnica, voluntariado e gestão de recursos.
+- **Competências com evidência** (`/curriculo/competencias`): a IA sugere a competência e o trecho literal que a justifica. Uma sugestão cujo trecho não está no texto do aluno é descartada no servidor. Nada vira confirmado sem a aprovação do aluno, e o banco força `status = 'sugerida'` em toda competência de origem IA.
+- **Currículo** (`/curriculo/editor`): é montado só com dados confirmados, e a IA escreve apenas o resumo e os tópicos (sem IA, usa os textos do próprio aluno). O aluno edita, reordena seções e remove itens. O PDF é gerado no servidor (`@react-pdf/renderer`), em coluna única, sem cabeçalho ou rodapé, com títulos de seção padronizados e dois modelos.
+- **Versões em PDF:** cada versão fica no bucket privado `curriculos` do Storage, com download por URL assinada de 60 segundos.
+- **Scanner ATS** (`/curriculo/ats`), com dois indicadores separados. São estimativas do KairusEdu, sem garantia de aprovação.
+  - **Leitura por ATS:** determinística, sem IA. Verifica texto extraível, marcas de impressão do navegador, contato, seções padrão, datas, tópicos, tamanho e ícones. Aceita PDFs gerados aqui e uploads do aluno (PDF ou DOCX, até 4 MB, verificados pela assinatura do arquivo).
+  - **Aderência à vaga:** vaga do KairusEdu ou descrição colada. Um requisito só conta como atendido se citar uma evidência real do perfil. Requisitos ausentes nunca são acrescentados ao currículo.
+- **Privacidade:** perfil, contato, currículos, uploads e análises são legíveis apenas pelo próprio aluno (RLS e Storage). A instituição não tem acesso individual.
+
+## Empregabilidade e LGPD
+
+- **Painel de empregabilidade** (`/empregabilidade`, gestão e equipe de apoio): perfis criados e completos, currículos gerados, competências confirmadas mais comuns, interesses de carreira, lacunas mais frequentes nas vagas analisadas e participação por curso. Usa só agregados (`painel_empregabilidade`), e grupos com menos de 5 alunos são omitidos. Nenhum currículo, contato ou análise individual chega à instituição.
+- **Meus dados** (`/meus-dados`, estudante):
+  - finalidades explicadas separadamente (permanência × carreira × IA);
+  - exportação em JSON de tudo o que pertence ao aluno;
+  - exclusão dos dados de carreira (perfil, currículos, arquivos e análises), confirmada digitando "EXCLUIR" e registrada na auditoria;
+  - pedidos de acesso, correção e exclusão.
+- **Pedidos de privacidade** (`/privacidade`, gestão): resposta aos pedidos do titular. O aluno é identificado pelo código de matrícula, e cada alteração fica na auditoria.
+- **Pendente de definição pela instituição:** bases legais por finalidade e prazos de guarda dos dados. O portal informa que são definidos pela instituição.
+
 ## Funções de IA
 
-Chamadas pelo SDK oficial da Anthropic (`@anthropic-ai/sdk`) no endpoint do OpenRouter compatível com a API Messages, com saída estruturada (JSON Schema) e validação com Zod. Código em `src/lib/ai/cliente.ts` (cliente, limites e registro de uso) e `src/features/ia/` (prompts e Server Actions).
+Chamadas pelo SDK oficial da Anthropic (`@anthropic-ai/sdk`) no endpoint do OpenRouter compatível com a API Messages, com saída estruturada (JSON Schema) e validação com Zod. Código em `src/lib/ai/cliente.ts` (cliente, limites e registro de uso), `src/features/curriculo/` (prompts e ações do currículo) e `src/features/ia/` (insights da gestão).
 
-| Função | Quem usa | O que envia ao modelo |
-|---|---|---|
-| Vivências em competências (`/carreira`) | Estudante | Curso e o texto escrito pelo estudante |
-| Currículo profissional (`/minha-jornada`) | Estudante | Curso, período, competências e a experiência já gerada |
-| Insights de permanência (`/inteligencia`) | Gestão | Apenas indicadores agregados |
+| Função | Quem usa | O que envia ao modelo | Limite diário |
+|---|---|---|---|
+| Competências com evidência | Estudante | Curso e textos das experiências e projetos | 10 |
+| Resumo e tópicos do currículo | Estudante | Objetivo, competências confirmadas, textos dos itens e requisitos da vaga-alvo | 15 |
+| Requisitos e aderência à vaga | Estudante | Texto da vaga e evidências do perfil (sem nome nem contato) | 15 |
+| Insights de permanência | Gestão | Apenas indicadores agregados | 5 |
 
-- **Nunca são enviados:** nome, código, e-mail ou qualquer dado individual de aluno. O nome do estudante só entra no currículo depois, na própria aplicação.
-- **Limite diário por usuário:** 10 gerações de vivências, 10 de currículo e 5 de insights. Cada chamada registra modelo, tokens e custo em `ia_uso`, sem o conteúdo.
-- **Prompt injection:** o texto do estudante vai delimitado e é tratado como conteúdo. A saída só é aceita se passar no schema.
-- **Sem invenção:** os prompts proíbem criar experiências, projetos ou números. Por isso o currículo tem "Formação" com dados reais, e não "Projetos acadêmicos".
-- **Aviso em toda saída:** "texto gerado por IA, revise antes de usar".
-- **Exportação:** o currículo é exportado pelo "Salvar como PDF" do navegador (`/minha-jornada/curriculo`).
+- **Nunca são enviados:** nome, matrícula, e-mail, telefone ou endereço. Cada chamada registra modelo, tokens e custo em `ia_uso`, sem o conteúdo.
+- **Prompt injection:** o texto do aluno vai delimitado e é tratado como conteúdo. A saída só é aceita se passar no schema e nas validações do servidor.
+- **Sem invenção:** os prompts proíbem criar empresas, números, ferramentas ou qualificações. Evidências e ids citados pela IA são conferidos no servidor.
 
 ## Próximas fases
 

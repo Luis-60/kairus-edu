@@ -20,7 +20,7 @@ function lerFatores(valor: unknown): Fator[] {
 /** Cursos que o usuário pode filtrar: todos (gestão) ou os que coordena. */
 export async function cursosVisiveis(papel: Papel) {
   const supabase = await createClient();
-  if (papel === "gestor") {
+  if (papel === "gestor" || papel === "apoio") {
     const { data, error } = await supabase.from("cursos").select("id, nome").order("nome");
     return resultado("alunos", data, error);
   }

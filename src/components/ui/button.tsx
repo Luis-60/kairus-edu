@@ -59,3 +59,13 @@ type ButtonLinkProps = ComponentProps<typeof Link> & { variant?: Variant; size?:
 export function ButtonLink({ variant = "primary", size = "md", className, ...props }: ButtonLinkProps) {
   return <Link className={cn(base, variants[variant], sizes[size], className)} {...props} />;
 }
+
+type DownloadLinkProps = ComponentProps<"a"> & { variant?: Variant; size?: Size };
+
+/**
+ * Link de download (arquivo gerado por rota do servidor). Usa <a> comum, e não o Link do Next:
+ * a navegação do roteador para a rota do arquivo deixaria a página num estado inconsistente.
+ */
+export function DownloadLink({ variant = "secondary", size = "md", className, ...props }: DownloadLinkProps) {
+  return <a className={cn(base, variants[variant], sizes[size], className)} {...props} />;
+}

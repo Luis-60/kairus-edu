@@ -11,12 +11,13 @@ import { createClient } from "@/lib/supabase/server";
 const MODELO = process.env.AI_MODEL ?? "anthropic/claude-opus-5.5";
 const BASE_URL = "https://openrouter.ai/api";
 
-export type FuncaoIA = "vivencias" | "curriculo" | "insights";
+export type FuncaoIA = "competencias" | "curriculo" | "vaga" | "insights";
 
 /** Gerações por usuário em 24 horas, por função. */
 export const LIMITE_DIARIO: Record<FuncaoIA, number> = {
-  vivencias: 10,
-  curriculo: 10,
+  competencias: 10,
+  curriculo: 15,
+  vaga: 15,
   insights: 5,
 };
 

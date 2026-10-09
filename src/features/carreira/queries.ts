@@ -35,7 +35,7 @@ export async function carregarCarreira(userId: string) {
   if (error) return { ok: false as const };
   if (!estudante) return { ok: true as const, data: null };
 
-  const [etapas, vagas, minhas, candidaturas, areas, empresas, curriculo] = await Promise.all([
+  const [etapas, vagas, minhas, candidaturas, areas, empresas] = await Promise.all([
     supabase
       .from("trilha_carreira_etapas")
       .select("id, periodo, titulo, descricao, entrega")
@@ -58,11 +58,6 @@ export async function carregarCarreira(userId: string) {
       .select("id, nome, setor, areas, cidade, distancia_campus_km")
       .order("distancia_campus_km", { ascending: true, nullsFirst: false })
       .limit(12),
-    supabase
-      .from("curriculos")
-      .select("vivencias, competencias_vivencias, experiencia_texto, vivencias_geradas_em")
-      .eq("estudante_id", estudante.id)
-      .maybeSingle(),
   ]);
 
   if (etapas.error || vagas.error || minhas.error || areas.error || empresas.error) {
@@ -108,15 +103,6 @@ export async function carregarCarreira(userId: string) {
     })
     .sort((a, b) => b.compatibilidade - a.compatibilidade);
 
-  const vivencias = curriculo.data;
-  const competenciasVivencias = Array.isArray(vivencias?.competencias_vivencias)
-    ? (vivencias.competencias_vivencias as { competencia?: unknown; origem?: unknown }[]).flatMap((c) =>
-        typeof c.competencia === "string" && typeof c.origem === "string"
-          ? [{ competencia: c.competencia, origem: c.origem }]
-          : [],
-      )
-    : [];
-
   return {
     ok: true as const,
     data: {
@@ -129,12 +115,6 @@ export async function carregarCarreira(userId: string) {
         area_passos: [...a.area_passos].sort((x, y) => x.ordem - y.ordem),
       })),
       empresas: empresas.data ?? [],
-      vivencias: {
-        texto: vivencias?.vivencias ?? null,
-        competencias: competenciasVivencias,
-        experiencia: vivencias?.experiencia_texto ?? null,
-        geradoEm: vivencias?.vivencias_geradas_em ?? null,
-      },
     },
   };
 }

@@ -34,7 +34,7 @@ function hojeISO() {
 }
 
 export default async function AcoesPage({ searchParams }: PageProps<"/acoes">) {
-  const sessao = await requirePapel("gestor", "coordenador");
+  const sessao = await requirePapel("gestor", "coordenador", "apoio");
   const f = filtrosAcoesSchema.parse(await searchParams);
   const abertas = await contarSolicitacoesAbertas();
 
